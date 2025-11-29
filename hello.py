@@ -3,8 +3,8 @@ from flask import Flask, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -21,64 +21,58 @@ moment = Moment(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-
-class Role(db.Model):
-    __tablename__ = 'roles'
+# --- MODELO (Banco de Dados) ---
+# Substituimos User/Role por Curso
+class Curso(db.Model):
+    __tablename__ = 'cursos'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True)
-    users = db.relationship('User', backref='role', lazy='dynamic')
+    nome = db.Column(db.String(100), nullable=False)
+    descricao = db.Column(db.String(250), nullable=False)
 
     def __repr__(self):
-        return '<Role %r>' % self.name
+        return '<Curso %r>' % self.nome
 
-
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, index=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
-
-    def __repr__(self):
-        return '<User %r>' % self.username
-
-
-class NameForm(FlaskForm):
-    name = StringField('What is your name?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
-
+# --- FORMULÁRIO ---
+# Substituimos NameForm por CursoForm
+class CursoForm(FlaskForm):
+    nome = StringField('Qual é o nome do curso?', validators=[DataRequired()])
+    # TextAreaField cria a caixa de texto maior, Length limita os caracteres
+    descricao = TextAreaField('Descrição (250 caracteres)', validators=[DataRequired(), Length(max=250)])
+    submit = SubmitField('Cadastrar')
 
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, User=User, Role=Role)
-
+    return dict(db=db, Curso=Curso)
 
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
-
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('500.html'), 500
 
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    form = NameForm()
-    user_all = User.query.all();
-    print(user_all);
+    form = CursoForm()
+    
+    # Lógica de Salvar no Banco
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.name.data).first()                
-        if user is None:
-            user_role = Role.query.filter_by(name='User').first();
-            user = User(username=form.name.data, role=user_role);
-            db.session.add(user)
-            db.session.commit()
-            session['known'] = False
-        else:
-            session['known'] = True
-        session['name'] = form.name.data
+        # Cria o objeto com os dados do formulário
+        novo_curso = Curso(nome=form.nome.data, descricao=form.descricao.data)
+        
+        # Adiciona e Comita no banco
+        db.session.add(novo_curso)
+        db.session.commit()
+        
+        # Redireciona para limpar o formulário (PRG Pattern)
         return redirect(url_for('index'))
-    return render_template('index.html', form=form, name=session.get('name'),
-                           known=session.get('known', False),
-                           user_all=user_all);
+    
+    # Lógica de Listagem e Ordenação
+    # Requiremento da prova: "ordenação do retorno do banco de dados"
+    cursos_ordenados = Curso.query.order_by(Curso.nome).all()
+    
+    return render_template('index.html', form=form, cursos=cursos_ordenados)
+
+if __name__ == '__main__':
+    app.run(debug=True)
