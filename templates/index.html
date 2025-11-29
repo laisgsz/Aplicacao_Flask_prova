@@ -1,35 +1,70 @@
 {% extends "base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
-{% block title %}Flasky{% endblock %}
+{% block title %}Avaliação Semestral{% endblock %}
 
+{# --- BLOCO NAVBAR (Para ficar igual à imagem da prova) --- #}
+{% block navbar %}
+<nav class="navbar navbar-inverse" style="border-radius: 0; margin-bottom: 20px;">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Avaliação semestral</a>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#">Cadastro de Professores</a></li>
+                <li><a href="#">Cadastro de Disciplinas</a></li>
+                <li><a href="#">Cadastro de Alunos</a></li>
+                <li class="active"><a href="#">Cadastro de Cursos</a></li>
+                <li><a href="#">Cadastro de Ocorrências</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{# --- CONTEÚDO DA PÁGINA --- #}
 {% block page_content %}
-<div class="page-header">
-    <h1>Olá, {% if name %}{{ name }}{% else %}Stranger{% endif %}!</h1>
-    {% if not known %}
-    <p>Prazer em conhecê-lo!</p>
-    {% else %}
-    <p>Feliz em vê-lo novamente!</p>
-    {% endif %}
+<div class="container"> <div class="row">
+        <div class="col-md-12">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
+
+    <br>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3 style="margin-top: 20px;">Relação de cursos cadastrados</h3>
+            <hr> <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Curso</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for curso in cursos %}
+                    <tr>
+                        <td style="font-weight: bold;">{{ curso.nome }}</td>
+                        <td>{{ curso.descricao }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">Nenhum curso cadastrado ainda.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
-{{ wtf.quick_form(form) }}
-
-<h2>Relação de usuários cadastrados</h2>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nome do usuário</th>
-            <th>Função</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for key in user_all %}
-        <tr>
-            <td>{{ key.username }}</td>
-            <td>{{ key.role.name }}</td>            
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
 {% endblock %}
